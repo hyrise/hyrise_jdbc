@@ -74,7 +74,6 @@ public class HyriseJDBCDriverTest {
 	@After
 	public void tearDown() throws Exception {
 		c.close();
-
 	}
 
 	@Test
