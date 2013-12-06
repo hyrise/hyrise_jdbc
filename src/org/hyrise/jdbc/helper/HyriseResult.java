@@ -7,13 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hyrise.jdbc.HyriseConnection;
 import org.hyrise.jdbc.HyriseDriver;
 
 public class HyriseResult {
@@ -84,8 +82,12 @@ public class HyriseResult {
 	}
 
 	public int numRows() {
-		if (numRows == -1)
-			numRows = root.path("rows").size();
+		if (numRows == -1) {
+			if (root.get("rows") != null)
+				numRows = root.path("rows").size();
+			else
+				numRows = 0;
+		}
 		return (int) numRows;
 	}
 

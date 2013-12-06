@@ -520,7 +520,7 @@ public class HyriseStatement implements Statement {
 	 * @return
 	 * @throws SQLException
 	 */
-	private HyriseResult executeHyriseQuery(String query, boolean discard)
+	HyriseResult executeHyriseQuery(String query, boolean discard)
 			throws SQLException {
 		try {
 			HttpPost pm = preparePostRequest(query);

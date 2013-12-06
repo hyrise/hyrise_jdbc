@@ -22,7 +22,6 @@ import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -48,25 +47,23 @@ public class HyriseConnection implements Connection {
 	boolean autoCommit = true;
 
 	boolean closed = true;
-	
+
 	boolean runningTransaction = false;
 
 	long sessionContext = INVALID_SESSION;
-	
+
 	String url;
-	
+
 	Properties clientProperties;
 
 	// This is the actual connection object
 	CloseableHttpClient client;
-	
-	
 
 	public HyriseConnection(String url, Properties info) {
 
 		this.url = url;
 		clientProperties = info;
-		
+
 		// We can use maximal 20 threads for a single connection
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
 		cm.setMaxTotal(20);
@@ -74,9 +71,9 @@ public class HyriseConnection implements Connection {
 
 		// Build the client
 		client = HttpClients.custom().setConnectionManager(cm).build();
-				
+
 	}
-		
+
 	// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Management Methods
 	// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +178,7 @@ public class HyriseConnection implements Connection {
 		setAutoCommit(false);
 		runningTransaction = true;
 	}
-	
+
 	@Override
 	public Statement createStatement() throws SQLException {
 		return new HyriseStatement(this);
@@ -189,14 +186,13 @@ public class HyriseConnection implements Connection {
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		return new HyrisePreparedStatement(this, sql);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new SQLException(MethodNameInflection.methodName()
+				+ " not supported in this driver version!");
 	}
 
 	@Override
