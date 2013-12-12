@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -22,6 +23,7 @@ import java.util.logging.SimpleFormatter;
 
 import org.apache.commons.io.IOUtils;
 import org.hyrise.jdbc.HyriseDriver;
+import org.hyrise.jdbc.net.HTTPStreamParser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +44,7 @@ public class HyriseJDBCDriverTest {
 
 		Class.forName("org.hyrise.jdbc.HyriseDriver");
 		Class.forName("org.hyrise.jdbc.helper.HyriseResult");
-		c = DriverManager.getConnection("http://192.168.31.39:5001");
+		c = DriverManager.getConnection("http://192.168.200.11:5001");
 
 		ConsoleHandler h = new ConsoleHandler();
 		h.setFormatter(new SimpleFormatter());
@@ -134,5 +136,56 @@ public class HyriseJDBCDriverTest {
 		}
 
 	}
+	
+	
+	@Test
+	public void testHttpStreamParser() {
+		String data = "HTTP/1.1 200 OK\r\n";
+		data += "Content-Type: application/json\r\n";
+		data += "Content-Length: 94\r\n";
+		data += "Connection: Keep-Alive\r\n";
+		data += "\r\n";
+		data += "{\"error\":[\"Parsing: * Line 1, Column 1\\n  Syntax error: value, object or array expected.\\n\"]}\n";
+		
+		ByteBuffer buf = ByteBuffer.allocate(data.length());
+		buf.put(data.getBytes());
+		buf.flip();
+		
+		HTTPStreamParser p = new HTTPStreamParser();
+		while(!p.done()) {
+			p.read(buf);
+		}
+	}
 
+	@Test
+	public void testHttpStreamParserChunked() {
+		String data = "HTTP/1.1 200 OK\r\n";
+		data += "Content-Type: application/json\r\n";
+		data += "Content-Length: 94\r\n";
+		data += "Connection: Keep-Alive\r\n";
+		data += "\r\n";
+		data += "{\"error\":[\"Parsing: * Line 1, Column 1\\n  Syntax error: value, object or array expected.\\n\"]}\n";
+		
+		ByteBuffer buf = ByteBuffer.allocate(data.length() * 100);
+		HTTPStreamParser p = new HTTPStreamParser();
+		
+		buf.put(data.substring(0, 30).getBytes());
+		buf.flip();
+		
+		assertEquals(false, p.done());
+		p.read(buf);
+		assertEquals(false, p.done());
+		buf.clear();
+		buf.put(data.substring(30,70).getBytes());
+		buf.flip();
+		p.read(buf);
+		assertEquals(false, p.done());
+		buf.clear();
+		buf.put(data.substring(70).getBytes());
+		buf.flip();
+		p.read(buf);
+		assertEquals(true, p.done());
+		
+	}
+	
 }

@@ -37,7 +37,7 @@ public class HyriseResult {
 			root = om.readTree(inputStream);
 
 			logger.log(Level.FINEST, root.toString());
-			
+
 			// If we have an error throw away
 			if (root.get("error") != null) {
 				throw new HyriseResultException(root);
@@ -53,7 +53,7 @@ public class HyriseResult {
 			root = om.readTree(data);
 
 			logger.log(Level.FINEST, root.toString());
-			
+
 			// If we have an error throw away
 			if (root.get("error") != null) {
 				throw new HyriseResultException(root);
@@ -122,7 +122,10 @@ public class HyriseResult {
 	}
 
 	public long getSessionContext() {
-		return root.get("session_context").getLongValue();
+		if (!isRunningTX())
+			return 0;
+		else
+			return root.get("session_context").getLongValue();
 	}
 
 	public boolean isRunningTX() {

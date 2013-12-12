@@ -4,6 +4,9 @@
 package org.hyrise.jdbc;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.channels.SocketChannel;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -59,6 +62,8 @@ public class HyriseConnection implements Connection {
 	// This is the actual connection object
 	CloseableHttpClient client;
 
+	SocketChannel channel = null;
+
 	public HyriseConnection(String url, Properties info) {
 
 		this.url = url;
@@ -71,6 +76,15 @@ public class HyriseConnection implements Connection {
 
 		// Build the client
 		client = HttpClients.custom().setConnectionManager(cm).build();
+
+		try {
+			URL u = new URL(url);
+			channel = SocketChannel.open();
+			channel.connect(new InetSocketAddress(u.getHost(), u.getPort()));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
@@ -85,6 +99,11 @@ public class HyriseConnection implements Connection {
 
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
+		if (!autoCommit)
+			runningTransaction = true;
+		else 
+			runningTransaction = false;
+
 		this.autoCommit = autoCommit;
 	}
 
@@ -95,7 +114,9 @@ public class HyriseConnection implements Connection {
 
 	@Override
 	public void commit() throws SQLException {
-		// TODO Auto-generated method stub
+		if (!autoCommit) {
+			prepareStatement(COMMIT_OP).executeUpdate();
+		}
 	}
 
 	@Override
@@ -175,7 +196,6 @@ public class HyriseConnection implements Connection {
 	// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	void beginTransaction() throws SQLException {
-		setAutoCommit(false);
 		runningTransaction = true;
 	}
 
@@ -191,8 +211,7 @@ public class HyriseConnection implements Connection {
 
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
-		throw new SQLException(MethodNameInflection.methodName()
-				+ " not supported in this driver version!");
+		return new HyriseCallableStatement(this, sql);
 	}
 
 	@Override
