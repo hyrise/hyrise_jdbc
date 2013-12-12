@@ -27,9 +27,6 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.hyrise.jdbc.helper.MethodNameInflection;
 
 /**
@@ -59,23 +56,12 @@ public class HyriseConnection implements Connection {
 
 	Properties clientProperties;
 
-	// This is the actual connection object
-	CloseableHttpClient client;
-
 	SocketChannel channel = null;
 
 	public HyriseConnection(String url, Properties info) {
 
 		this.url = url;
 		clientProperties = info;
-
-		// We can use maximal 20 threads for a single connection
-		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-		cm.setMaxTotal(20);
-		cm.setDefaultMaxPerRoute(20);
-
-		// Build the client
-		client = HttpClients.custom().setConnectionManager(cm).build();
 
 		try {
 			URL u = new URL(url);
@@ -127,7 +113,7 @@ public class HyriseConnection implements Connection {
 	@Override
 	public void close() throws SQLException {
 		try {
-			client.close();
+			channel.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new SQLException(e);
